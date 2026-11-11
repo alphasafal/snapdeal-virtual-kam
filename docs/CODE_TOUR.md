@@ -1,7 +1,8 @@
 # Code tour
 
 Read this first if you are new to the code. It takes about ten minutes, and after it
-every file should make sense when you open it.
+every file should make sense when you open it. For the design decisions behind it, how it
+scales and how it fails, read `ARCHITECTURE.md`.
 
 ## The idea in four sentences
 
@@ -39,11 +40,12 @@ web app reads it once a second.
 | `brain/audit.py` | After a call, finds every rupee amount Asha spoke and checks it against the data. |
 | `brain/repo.py` | All database reads and writes, in five labelled sections. |
 | `brain/db.py` | The database tables, listed and described at the top. |
-| `brain/seed.py` | The three mock sellers. Seller S1 is the table from the assignment brief. |
-| `brain/jobs.py` | The nightly scan that flags sellers at risk. |
+| `brain/seed.py` | The twelve mock sellers. Seller S1 is the table from the assignment brief; S1 to S3 are the detailed ones used in the demo. |
+| `brain/planner.py` | The what-if planner: the actions open to a seller and the rupees each could win back. |
+| `brain/jobs.py` | The nightly scan: diagnoses every seller and stores the planner's options, which is what ranks the call queue. |
 | `simulate_call.py` | Plays a scripted call into the database with no audio, to check the screens. |
 | `hello_sarvam.py`, `hello_gemini.py` | One-file checks that each API key works. |
-| `tests/` | 117 tests. `test_agent_session.py` runs the real agent with a scripted model. |
+| `tests/` | 134 tests. `test_agent_session.py` runs the real agent with a scripted model. |
 
 ### `web/`
 
@@ -52,7 +54,8 @@ web app reads it once a second.
 | `components/CallScreen.tsx` | The live call screen; the only file that touches audio. Explained at the top. |
 | `app/page.tsx` | Home: pick a seller or enter your own numbers. |
 | `app/seller/[id]/page.tsx` | One seller: loads their data, then hands over to `CallScreen`. |
-| `app/dashboard/page.tsx` | Team dashboard: calls, review status, sellers needing attention. |
+| `app/dashboard/page.tsx` | Team dashboard: the call queue ranked by recoverable sales, then calls and review status. |
+| `app/seller/[id]/plan/page.tsx`, `components/Planner.tsx` | The what-if planner page for one seller. |
 | `app/dashboard/calls/[id]/page.tsx` | One call's full record with the human review form. |
 | `app/how-it-works/page.tsx` | The explanation page for reviewers. |
 | `app/api/calls/route.ts` | Creates a call and a LiveKit token. |

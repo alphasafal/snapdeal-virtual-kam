@@ -53,12 +53,13 @@ With my mock product data, stockouts explain ₹45,450 (70%) of the ₹65,000 dr
   data; anything unmatched is flagged for the human reviewer. This came from a call where the
   model said "6 lakh" for 2 lakh.
 - **The seller can undo.** "I did not agree to that" removes the action and reverses it.
-- **Three sellers, three causes** (stockouts, rival pricing, late dispatch), plus a form to enter
+- **Twelve sellers, four situations** (stockouts, rival pricing, late dispatch, growing), a call queue
+  ranked by recoverable sales, a what-if planner per seller, plus a form to enter
   any numbers, to show the reasoning is not scripted.
 - **State lives in the database, not the agent**, so calls are independent and workers can scale.
 - **Built to survive bad networks.** Transcription and voice each have a fallback path, and a
   dropped call is recorded and resumed on the next one.
-- **Tested without a microphone.** 117 automated tests, including the real agent run in a
+- **Tested without a microphone.** 134 automated tests, including the real agent run in a
   text-only session with a scripted LLM.
 
 ## Cost and scale (estimates from published prices, not load-tested)
@@ -70,7 +71,7 @@ seller. The nightly scan is one batch job with no LLM cost.
 ## Assumptions and limits
 
 - Sales in the brief are treated as before cancellations (sales = orders × average price).
-- Product-level data, visits, rating, cancellation reasons and sellers S2/S3 are mock data I added.
+- Product-level data, visits, rating, cancellation reasons and sellers S2 to S12 are mock data I added.
 - Actions are saved records with mock effects; nothing touches a real Snapdeal system.
 - Not load-tested. Recovery figures are upper bounds ("up to").
 

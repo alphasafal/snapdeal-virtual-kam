@@ -28,7 +28,7 @@ Say each line once, clearly, and wait for her to finish. English lines work the 
 | 5 | "हाँ, कर दीजिए।" (*Yes, go ahead.*) | The paused listings appear there too. She asks about a safety buffer. |
 | 6 | "नहीं, वो रहने दीजिए। बस इतना काफ़ी है।" (*No, leave that one. That is enough.*) | Nothing is added. She books the follow-up and gives the summary. |
 | 7 | "नहीं, बस। धन्यवाद।" (*No, that's all. Thank you.*) | She says goodbye and hangs up by herself. |
-| 8 | Click **Team dashboard**, open the call. | Summary, actions, transcript, figure check. Stop recording. |
+| 8 | Click **Team dashboard**. Scroll the call queue, click **Plan** on one seller, then go back and open the call. | The ranked queue, the what-if planner, then the call's summary and figure check. Stop recording. |
 
 Step 6 is worth keeping: it shows she takes no for an answer and saves nothing.
 
