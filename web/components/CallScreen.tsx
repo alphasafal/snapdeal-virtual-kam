@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Room, RoomEvent, Track } from "livekit-client";
-import { day, inr } from "@/lib/format";
+import { day, inr, withoutRepeats } from "@/lib/format";
 
 type Phase = "idle" | "ringing" | "connecting" | "live" | "ended";
 type Turn = { id: number; role: "agent" | "seller" | "tool"; text: string };
@@ -202,12 +202,25 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
   }
 
   // ---- Everything below turns the latest state into what is shown on screen ----
-  const turns = state?.turns ?? [];
+  const turns = withoutRepeats(state?.turns ?? []);
   const kept = (state?.actions ?? []).filter((a) => a.status !== "cancelled");
   const removed = (state?.actions ?? []).filter((a) => a.status === "cancelled");
   const actions = kept.filter((a) => a.type !== "followup");
   const followup = kept.find((a) => a.type === "followup");
   const diagnosis = state?.diagnosis;
+
+  // Where the call has got to, worked out from what has been said and saved so far.
+  const agentTurns = turns.filter((t) => t.role === "agent").length;
+  const sellerTurns = turns.filter((t) => t.role === "seller").length;
+  const journey: [string, boolean][] = [
+    ["Greet", agentTurns >= 1],
+    ["Diagnose", agentTurns >= 2],
+    ["Ask", sellerTurns >= 2],
+    ["Act", actions.length >= 1],
+    ["Follow-up", kept.some((a) => a.type === "followup")],
+    ["Summarise", Boolean(state?.call?.summary?.issue)],
+  ];
+  const nextStep = journey.findIndex(([, done]) => !done);
   const summary = state?.call?.status === "ended" ? state.call.summary : null;
   const live = phase === "live";
   const dropped = summary?.ended_reason === "connection_problem";
@@ -276,7 +289,7 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
             {phase === "ended" && <button className="btn onDark" onClick={simulateWeek}>Simulate a week passing</button>}
           </div>
           {phase === "idle" && hasHistory && <p className="hint small" style={{ marginTop: 12 }}>This seller has an earlier call, so Asha will open by following up on it.</p>}
-          {live && micBlocked && <p className="hint small" style={{ marginTop: 12 }}>No microphone was available, so this call is in typing mode. Asha still speaks; type your side under the conversation.</p>}
+          {live && micBlocked && <p className="hint small" style={{ marginTop: 12 }}>No microphone was available, so this call is in typing mode. Asha still speaks; type your side under the conversation. To speak instead, allow the microphone for this site in your browser, then start a new call.</p>}
           {live && !showTyping && <p className="hint small" style={{ marginTop: 12 }}><button type="button" className="linkish" onClick={() => setShowTyping(true)}>Cannot speak right now? Type instead</button></p>}
           {simNote && <p className="hint small" style={{ marginTop: 12 }}>{simNote}</p>}
           {error && <div className="error" role="alert">{error}</div>}
@@ -285,6 +298,15 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
 
         <div className="card">
           <h2>Conversation</h2>
+          {callId && (
+            <ol className="journey" aria-label="Progress of the call">
+              {journey.map(([label, done], i) => (
+                <li key={label} className={done ? "done" : i === nextStep && live ? "now" : ""}>
+                  <i>{done ? "✓" : i + 1}</i>{label}
+                </li>
+              ))}
+            </ol>
+          )}
           <div className="talk" ref={talkRef}>
             {turns.length === 0 && <p className="muted">{callId ? "Waiting for the first words." : "The transcript appears here once the call starts."}</p>}
             {turns.map((t) => t.role === "tool"

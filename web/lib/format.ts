@@ -39,3 +39,9 @@ export function day(d: string | null | undefined): string {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${Number(m[3])} ${months[Number(m[2]) - 1]}`;
 }
+
+// The agent sometimes reports the same step twice in a row (for example "Ended the call").
+// Show it once.
+export function withoutRepeats<T extends Record<string, any>>(turns: T[]): T[] {
+  return turns.filter((turn, i) => !(i > 0 && turn.role === "tool" && turns[i - 1].role === "tool" && turns[i - 1].text === turn.text));
+}

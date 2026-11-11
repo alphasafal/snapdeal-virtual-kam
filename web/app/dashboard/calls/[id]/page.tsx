@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ensureReviews, q } from "@/lib/db";
-import { causeLabel, day, inr, shortDate } from "@/lib/format";
+import { causeLabel, day, inr, shortDate, withoutRepeats } from "@/lib/format";
 import ReviewForm from "@/components/ReviewForm";
 
 export const dynamic = "force-dynamic";
@@ -16,11 +16,12 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
     `select c.*, s.name as seller_name, s.owner_name, s.city from calls c join sellers s on s.id = c.seller_id where c.id = $1`, [id]);
   if (!calls.length) notFound();
   const call = calls[0];
-  const [turns, actions, reviews] = await Promise.all([
+  const [allTurns, actions, reviews] = await Promise.all([
     q("select id, role, text, at from call_turns where call_id = $1 order by id", [id]),
     q("select * from actions where call_id = $1 order by created_at", [id]),
     q("select * from call_reviews where call_id = $1", [id]),
   ]);
+  const turns = withoutRepeats(allTurns);
   const review = reviews[0] ?? null;
   const summary = call.summary ?? {};
   const notes: Record<string, string> = call.notes ?? {};

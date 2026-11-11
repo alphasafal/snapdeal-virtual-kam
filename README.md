@@ -71,6 +71,9 @@ flowchart LR
 The agent and the web app never call each other: both read and write the database, so calls
 are independent and more agent workers can be added without changing anything else.
 
+**`docs/LIVE_CALL_TEST.md`** is the record of a full call against the real services, with what
+was checked, what it found and the whole conversation.
+
 **`docs/ARCHITECTURE.md`** has the full design: a step-by-step call diagram, why each part was
 chosen and what it costs, the data model, how it grows to one lakh sellers, and what happens
 when each part fails.
