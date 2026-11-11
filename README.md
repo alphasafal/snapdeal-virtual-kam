@@ -168,6 +168,9 @@ A team member can mark the call as reviewed or flag it for follow-up, with a not
 - A language-model request that sends nothing for four seconds is abandoned and retried at once
   (`LLM_TIMEOUT_S`). On a live call, waiting the default ten seconds twice gave a 25-second silence.
 - Asha's goodbye cannot be interrupted, so a background noise cannot cut the call off mid-sentence.
+- No microphone? The call still connects in typing mode: the seller types, Asha answers aloud, and
+  every tool, consent check and record works the same way.
+- `GET /api/health` on the web app answers 200 only when the database is reachable.
 
 - Transcription and voice each have a fallback, and the call survives up to 12 provider errors.
 - If the call does drop, the page says so and the next call picks up from what was agreed.

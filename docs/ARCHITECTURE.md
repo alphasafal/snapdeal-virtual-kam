@@ -153,6 +153,7 @@ These are estimates from the design and published prices. Nothing here has been 
 | The language model sends nothing | The request is abandoned after four seconds and retried at once |
 | The seller's network drops | The call is recorded as dropped; the next call opens with what was agreed |
 | A worker dies mid-call | The dashboard closes the call record after 30 minutes and marks it |
+| The database is unreachable | `GET /api/health` answers 503, so a load balancer or monitor can react; pages recover on the next request |
 | The model claims consent it did not get | The tool refuses and tells the model to ask; nothing is saved |
 | The model says a wrong rupee figure | The figure check flags the call for the human reviewer |
 | Someone opens rooms on the LiveKit project | The worker only joins rooms that match a call row in its database |
