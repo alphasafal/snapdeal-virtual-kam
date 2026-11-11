@@ -17,6 +17,7 @@
 // Left column: the call panel and the conversation. Right column: summary, what was agreed,
 // what Asha found, and the seller's data.
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import ShareSummary from "@/components/ShareSummary";
 import { useRouter } from "next/navigation";
 import { Room, RoomEvent, Track } from "livekit-client";
 import { day, inr, withoutRepeats } from "@/lib/format";
@@ -352,6 +353,7 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
                   : summary.audit.figures_checked ? `${summary.audit.figures_checked} spoken figures checked against the data, all match` : "") : "",
               ].filter(Boolean).join(", ")}
             </p>
+            <ShareSummary sellerName={ownerName} summary={summary} />
           </div>
         )}
 

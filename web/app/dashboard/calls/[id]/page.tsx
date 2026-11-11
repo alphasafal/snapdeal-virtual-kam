@@ -1,5 +1,6 @@
 // The full record of one call, for a person on the team: summary, every action (including
 // cancelled ones), the whole conversation, the automatic figure check, and the review form.
+import ShareSummary from "@/components/ShareSummary";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ensureReviews, q } from "@/lib/db";
@@ -60,6 +61,7 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
               <ul className="clean">{summary.causes.map((c: string) => <li key={c}>{c}</li>)}</ul>
             )}
             {summary.followup_date && <p style={{ marginTop: 10 }}>Follow-up call on {day(summary.followup_date)}.</p>}
+            {summary.issue && <ShareSummary sellerName={call.owner_name ?? call.seller_name ?? "the seller"} summary={summary} />}
           </div>
 
           <div className="card">
