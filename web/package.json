@@ -1,0 +1,26 @@
+{
+  "name": "snapdeal-virtual-kam-web",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@fontsource-variable/anek-latin": "^5.3.0",
+    "@fontsource/mukta": "^5.3.0",
+    "livekit-client": "^2",
+    "livekit-server-sdk": "^2",
+    "next": "^15",
+    "pg": "^8",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/pg": "^8",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}
