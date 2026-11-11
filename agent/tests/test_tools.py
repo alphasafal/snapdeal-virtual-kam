@@ -272,3 +272,14 @@ def test_stale_live_calls_are_closed(fresh_db):
     repo.update_call(fresh, status="live", started_at=datetime.now(timezone.utc))
     assert repo.close_stale_calls() == 1
     assert repo.get_call(stuck)["status"] == "ended" and repo.get_call(fresh)["status"] == "live"
+
+
+def test_brief_names_the_actions_that_do_not_fit_the_seller(fresh_db):
+    """A pricing seller must not be offered stock actions, and the brief says so in plain words."""
+    pricing = KamTools("S2", repo.create_call("S2")).account_brief()
+    assert "DO NOT OFFER" in pricing
+    line = next(l for l in pricing.splitlines() if l.startswith("DO NOT OFFER"))
+    assert "a restock plan" in line and "pausing listings" in line and "matching rival prices" not in line
+    stock = KamTools("S1", repo.create_call("S1")).account_brief()
+    stock_line = next((l for l in stock.splitlines() if l.startswith("DO NOT OFFER")), "")
+    assert "matching rival prices" in stock_line and "a restock plan" not in stock_line

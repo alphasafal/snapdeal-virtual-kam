@@ -45,7 +45,7 @@ web app reads it once a second.
 | `brain/jobs.py` | The nightly scan: diagnoses every seller and stores the planner's options, which is what ranks the call queue. |
 | `simulate_call.py` | Plays a scripted call into the database with no audio, to check the screens. |
 | `hello_sarvam.py`, `hello_gemini.py` | One-file checks that each API key works. |
-| `tests/` | 137 tests. `test_agent_session.py` runs the real agent with a scripted model. |
+| `tests/` | 138 tests. `test_agent_session.py` runs the real agent with a scripted model. |
 
 ### `web/`
 

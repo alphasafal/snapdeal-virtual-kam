@@ -59,3 +59,34 @@ turn-taking, and reply delay was not measured.
 | Asha | ठीक है, follow-up call 18 November, Wednesday को schedule कर दी है। क्या और कोई help चाहिए? |
 | Seller | नहीं, बस। धन्यवाद। |
 | Asha | ठीक है राजेश जी, धन्यवाद। अपना ध्यान रखिएगा। |
+
+## Second and third calls, 12 November: a seller who wants to halve every price
+
+Two more typed calls, this time in English with Trendz Fashion Hub, whose real problem is
+rivals undercutting eight products.
+
+**Second call (before the fixes below).** Asha handled the request well: she refused the
+blanket cut, named the eight undercut products, asked what discount the seller's margin
+allows, and matched prices within the fifteen percent the seller gave. It also showed three
+flaws:
+
+| Flaw | What was changed |
+|---|---|
+| English was selected, but she spoke Hinglish throughout | The English rule now says: English only, from the greeting to the last word |
+| She said sales "fell to 88,000" when they fell *by* ₹88,000 | She is told to say "down by", never "fell to" the size of the drop |
+| She called "end call" three times and the line closed with no goodbye | The goodbye is now a fixed line queued by code, spoken once, and cannot be interrupted |
+
+**Third call (after the fixes).**
+
+| What was checked | Observed |
+|---|---|
+| Language | English throughout: "Hello Meena, I am Asha from Snapdeal. How can I help you today?" |
+| The drop | "Your sales fell by about 88,000 rupees this month, from 3,20,000 to 2,32,000." |
+| Price match | Saved within the ten percent the seller allowed; "up to about 61,000 rupees per month" |
+| "That is enough for today" | Summary and follow-up (19 November) in one turn, no further questions |
+| Hang-up | One "end call", then: "Thank you, Meena. Take care, and we will talk again soon." |
+| Figure check | 7 figures checked, none flagged |
+| Length and cost | 1 minute 42 seconds, ₹2.22 |
+
+One thing it still did: after the price match she offered a restock plan, which is not in this
+seller's playbook. The account brief now lists, per seller, the actions not to offer.

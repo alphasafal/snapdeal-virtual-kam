@@ -20,7 +20,7 @@ Everything runs on mock data. Seller S1 is the exact table from the assignment b
 | **Ownership** | Asha saves actions during the call, books a follow-up, and opens the next call with what was agreed. A nightly scan ranks all twelve sellers by the rupees that could be won back, so she calls the right ones first. After a call, the summary can be sent to the seller on WhatsApp in one tap. |
 | **Planning** | A what-if planner for every seller: tick the actions they can take and see next month's sales. It quotes the same figures Asha says on the call, and a test checks that. |
 | **Trust** | An action is saved only if the seller's own words were a clear yes. After every call each rupee figure she spoke is checked against the data. A person can review and sign off any call. |
-| **Evidence** | 137 automated tests, including the real agent run against a scripted model. Twelve sellers across four situations (stockouts, rival pricing, late dispatch, and one that is growing), plus a form to enter any numbers. |
+| **Evidence** | 138 automated tests, including the real agent run against a scripted model. Twelve sellers across four situations (stockouts, rival pricing, late dispatch, and one that is growing), plus a form to enter any numbers. |
 
 ## What it looks like
 
@@ -93,7 +93,7 @@ follows one call through the code, and lists the words used.
 | `agent/brain/` | Diagnosis engine, tools, what-if planner, consent check, figure check, database layer, mock data. Plain Python, no LLM. |
 | `agent/prompts.py` | The agent's instructions. |
 | `agent/speech_filter.py` | Keeps any leaked model reasoning out of what is spoken. |
-| `agent/tests/` | 137 tests, including the real agent run in a text-only session with a scripted LLM. |
+| `agent/tests/` | 138 tests, including the real agent run in a text-only session with a scripted LLM. |
 | `web/` | Next.js app: call screen, "try your own numbers", team dashboard with the call queue, what-if planner, call records and human review, how-it-works page. |
 | `docs/` | Architecture, code tour, submission note, recording script, deploy guide. |
 
@@ -115,7 +115,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # fill in the keys (skip if .env already exists)
 python hello_sarvam.py        # first Sarvam call: writes hello_sarvam.wav
-python -m pytest -q           # 137 tests, no keys needed
+python -m pytest -q           # 138 tests, no keys needed
 python -m brain.seed          # creates tables and the twelve mock sellers (wipes calls)
 python agent.py console       # optional: talk to Asha in the terminal
 python agent.py dev           # leave this running; it waits for calls
@@ -145,6 +145,8 @@ For a recording, the agent on your laptop is enough.
 | `SARVAM_TTS_MODEL` | unset | unset = Bulbul v4 Flash first, Bulbul v3 as fallback; set a model name to force it |
 | `SARVAM_REASONING_EFFORT` | `none` | model "thinking" is off: it made replies slow and leaked into speech |
 | `LLM_TIMEOUT_S` | `4` | seconds of silence from the language model before the request is retried |
+| `SARVAM_TTS_PACE` | `1.1` | how fast Asha speaks; `1.0` is the voice's natural speed |
+| `NOISE_CANCELLATION` | unset | `bvc` removes background voices and noise from the seller's audio (needs `pip install livekit-plugins-noise-cancellation` and LiveKit Cloud). Opt-in: not yet tried on a live call |
 | `ENDPOINT_MAX_DELAY` | `1.6` | longest wait (seconds) before deciding the seller has finished; raise it if sellers get cut off mid-thought |
 
 ## Safeguards that do not rely on the model behaving

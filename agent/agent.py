@@ -519,8 +519,11 @@ def build_session(language: str, mode: str = "sarvam", gemini_model: Optional[st
     # --- Mouth: text to speech ---
     def sarvam_tts(model: str):
         """Sarvam text-to-speech with an Indian voice, in Hindi or Indian English."""
+        # A touch quicker than the default pace: on live calls her turns felt slow and a full
+        # call ran four minutes. Set SARVAM_TTS_PACE=1.0 for the voice's natural speed.
         return sarvam.TTS(target_language_code="hi-IN" if hinglish else "en-IN", model=model,
-                          speaker=os.environ.get("SARVAM_TTS_SPEAKER") or None)
+                          speaker=os.environ.get("SARVAM_TTS_SPEAKER") or None,
+                          pace=float(os.environ.get("SARVAM_TTS_PACE", "1.1")))
 
     # The fast, cheaper voice model first; the older one takes over if it fails.
     tts_model = os.environ.get("SARVAM_TTS_MODEL", "").strip()
@@ -560,6 +563,24 @@ def build_session(language: str, mode: str = "sarvam", gemini_model: Optional[st
         conn_options=SessionConnectOptions(stt_conn_options=retry, llm_conn_options=llm_retry,
                                            tts_conn_options=retry, max_unrecoverable_errors=12),
     )
+
+
+def noise_filter():
+    """Optional filter that removes background voices and noise from the seller's audio.
+
+    Off unless NOISE_CANCELLATION is set to "bvc" (background voices and noise) or "nc" (noise
+    only), and it needs `pip install livekit-plugins-noise-cancellation` and LiveKit Cloud.
+    It exists because a live call failed when a film playing in the room was heard as the
+    seller speaking. It has not been tried on a live call yet, which is why it is opt-in."""
+    choice = os.environ.get("NOISE_CANCELLATION", "").strip().lower()
+    if choice not in ("bvc", "nc"):
+        return None
+    try:
+        from livekit.plugins import noise_cancellation
+        return noise_cancellation.BVC() if choice == "bvc" else noise_cancellation.NC()
+    except Exception:
+        log.warning("NOISE_CANCELLATION is set but the plugin could not be loaded; continuing without it")
+        return None
 
 
 def goodbye_line(owner_name: str, language: str) -> str:
@@ -877,7 +898,13 @@ async def entrypoint(ctx: JobContext) -> None:
 
     # 5. Go live: mark the call, join the room, and have Asha speak first.
     await db_call(repo.update_call, call_id, status="live", started_at=recorder.started, voice_mode=mode)
-    await session.start(agent=kam_agent, room=ctx.room)
+    cleaner = noise_filter()
+    if cleaner is not None:
+        from livekit.agents.voice import room_io
+        await session.start(agent=kam_agent, room=ctx.room, room_options=room_io.RoomOptions(
+            audio_input=room_io.AudioInputOptions(noise_cancellation=cleaner)))
+    else:
+        await session.start(agent=kam_agent, room=ctx.room)
     log.info("call set up in %.1fs (join room %.1f, load seller %.1f, start voice %.1f)",
              time.monotonic() - began, joined - began, briefed - joined, time.monotonic() - briefed)
     await session.generate_reply(instructions="Start the call now with the opening described in CALL FLOW step 1.")

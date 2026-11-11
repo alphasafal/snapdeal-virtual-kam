@@ -59,7 +59,7 @@ With my mock product data, stockouts explain ₹45,450 (70%) of the ₹65,000 dr
 - **State lives in the database, not the agent**, so calls are independent and workers can scale.
 - **Built to survive bad networks.** Transcription and voice each have a fallback path, and a
   dropped call is recorded and resumed on the next one.
-- **Tested without a microphone.** 137 automated tests, including the real agent run in a
+- **Tested without a microphone.** 138 automated tests, including the real agent run in a
   text-only session with a scripted LLM.
 
 ## Cost and scale (estimates from published prices, not load-tested)

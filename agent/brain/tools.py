@@ -40,6 +40,10 @@ NEEDS_CONFIRMATION = {
 RESTOCK_BUFFER = 1.2          # restock 20% above last month's units, to avoid running out again
 MAX_PRICE_CUT_PCT = 40.0      # never propose cutting a price by more than this, whatever is asked
 RECOMMENDED_ACTIONS = 3       # how many playbook actions Asha recommends unprompted (the brief asks for 2-3)
+# Every action tool, with the words used for it when telling the model what not to offer.
+OTHER_ACTIONS = {"create_restock_plan": "a restock plan", "pause_unavailable_listings": "pausing listings",
+                 "set_stock_buffer": "a stock safety buffer", "match_rival_prices": "matching rival prices",
+                 "enable_dispatch_alerts": "dispatch alerts"}
 
 
 def spoken(amount: float) -> str:
@@ -122,6 +126,14 @@ class KamTools:
             if extra:
                 lines += ["ONLY IF ASKED (offer only if the seller asks what else can be done):"]
                 lines += [f"- {step}" for step in extra]
+            # Name what does not fit this seller. On live calls the model, having finished the
+            # playbook, went looking for more and offered a restock plan to a seller whose
+            # problem was pricing. A plain list of what not to offer works better than a rule.
+            offered = {step.split(" - ")[0] for step in steps}
+            not_theirs = [label for tool, label in OTHER_ACTIONS.items() if tool not in offered]
+            if not_theirs:
+                lines += ["DO NOT OFFER (not this seller's problem; only if the seller asks for it by name): "
+                          + ", ".join(not_theirs) + "."]
         lines += ["", f"Today is {repo.today_ist().strftime('%A, %d %B %Y')} (India time)."]
         return "\n".join(lines)
 
