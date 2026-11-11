@@ -15,6 +15,7 @@ The tables, and what each one holds:
   followups        follow-up calls that have been booked
   call_reviews     a team member's sign-off or flag on a finished call
   diagnoses        the latest diagnosis for each seller (see diagnosis.py)
+  plans            the what-if planner's options for each seller (see planner.py)
 
 Every table is plain rows. No state lives in the agent process, so any number of agent
 workers can serve calls in parallel. To read or write these tables, use repo.py.
@@ -154,6 +155,16 @@ diagnoses = Table(
     Column("gap_inr", Float),
     Column("headline", String),
     Column("result", JSON),
+)
+
+# What-if planner options per seller, written by the nightly scan (see planner.py).
+plans = Table(
+    "plans", metadata,
+    Column("seller_id", String, primary_key=True),
+    Column("computed_at", DateTime(timezone=True)),
+    Column("gap_inr", Float),                          # the sales drop being planned against
+    Column("recoverable_inr", Float),                  # the most all options could win back together
+    Column("options", JSON),                           # list of {key, title, detail, recover_inr, when}
 )
 
 
