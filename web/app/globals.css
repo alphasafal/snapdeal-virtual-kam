@@ -125,6 +125,10 @@ form.own .h { font-size: 13px; color: var(--ink-3); }
 .flow b { display: block; }
 
 td .btn { white-space: nowrap; }
+/* Typed fallback on the call screen */
+.typed { display: flex; gap: 8px; margin-top: 12px; }
+.typed input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font: inherit; color: inherit; background: var(--card); }
+.linkish { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
 /* What-if planner */
 .opt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 12px; align-items: start; padding: 12px 0; border-bottom: 1px dashed var(--line); cursor: pointer; }
 .opt:last-of-type { border-bottom: 0; }

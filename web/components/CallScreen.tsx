@@ -10,6 +10,9 @@
 //   4. When the agent ends the call, or the seller clicks "End call", it leaves the room and
 //      shows the summary.
 //
+// If no microphone is available the call still goes ahead in typing mode: the seller's words
+// are sent as text over the same call (sendTyped) and Asha answers aloud as usual.
+//
 // The call moves through five phases: idle -> (ringing) -> connecting -> live -> ended.
 // Left column: the call panel and the conversation. Right column: summary, what was agreed,
 // what Asha found, and the seller's data.
@@ -56,6 +59,9 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
   const [waitedLong, setWaitedLong] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [audioBlocked, setAudioBlocked] = useState(false);
+  const [micBlocked, setMicBlocked] = useState(false);     // no microphone: the seller types instead
+  const [showTyping, setShowTyping] = useState(false);
+  const [typed, setTyped] = useState("");
   const roomRef = useRef<Room | null>(null);
   const audioHost = useRef<HTMLDivElement>(null);
   const talkRef = useRef<HTMLDivElement>(null);
@@ -90,7 +96,14 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
       room.on(RoomEvent.AudioPlaybackStatusChanged, () => setAudioBlocked(!room.canPlaybackAudio));
       await room.connect(out.url, out.token);
       if (room.remoteParticipants.size > 0) setAgentJoined(true);
-      await room.localParticipant.setMicrophoneEnabled(true);
+      // No microphone (blocked, missing, or refused)? Carry on: the seller can type instead.
+      try {
+        await room.localParticipant.setMicrophoneEnabled(true);
+        setMicBlocked(false);
+      } catch {
+        setMicBlocked(true);
+        setShowTyping(true);
+      }
       await room.startAudio().catch(() => {});
       setAudioBlocked(!room.canPlaybackAudio);
       setSeconds(0);
@@ -113,9 +126,25 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
   const toggleMute = useCallback(async () => {
     const room = roomRef.current;
     if (!room) return;
-    await room.localParticipant.setMicrophoneEnabled(muted);
-    setMuted(!muted);
+    try {
+      await room.localParticipant.setMicrophoneEnabled(muted);
+      setMuted(!muted);
+      setMicBlocked(false);
+    } catch {
+      setMicBlocked(true);
+      setShowTyping(true);
+    }
   }, [muted]);
+
+  // Typed fallback: the seller's words go to Asha as text over the same call. She still answers
+  // aloud, and everything else (tools, consent check, transcript) works exactly as for speech.
+  const sendTyped = useCallback(async (event: React.FormEvent) => {
+    event.preventDefault();
+    const text = typed.trim();
+    if (!text || !roomRef.current) return;
+    setTyped("");
+    await roomRef.current.localParticipant.sendText(text, { topic: "lk.chat" }).catch(() => setTyped(text));
+  }, [typed]);
 
   // Leaving the page ends the call.
   useEffect(() => () => { roomRef.current?.disconnect(); }, []);
@@ -241,12 +270,14 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
                 Tap to hear Asha
               </button>
             )}
-            {live && <button className="btn onDark" onClick={toggleMute}>{muted ? "Unmute" : "Mute"}</button>}
+            {live && !micBlocked && <button className="btn onDark" onClick={toggleMute}>{muted ? "Unmute" : "Mute"}</button>}
             {live && <button className="btn stop" onClick={end}>End call</button>}
             {phase === "ended" && <button className="btn go" onClick={() => window.location.reload()}>New call</button>}
             {phase === "ended" && <button className="btn onDark" onClick={simulateWeek}>Simulate a week passing</button>}
           </div>
           {phase === "idle" && hasHistory && <p className="hint small" style={{ marginTop: 12 }}>This seller has an earlier call, so Asha will open by following up on it.</p>}
+          {live && micBlocked && <p className="hint small" style={{ marginTop: 12 }}>No microphone was available, so this call is in typing mode. Asha still speaks; type your side under the conversation.</p>}
+          {live && !showTyping && <p className="hint small" style={{ marginTop: 12 }}><button type="button" className="linkish" onClick={() => setShowTyping(true)}>Cannot speak right now? Type instead</button></p>}
           {simNote && <p className="hint small" style={{ marginTop: 12 }}>{simNote}</p>}
           {error && <div className="error" role="alert">{error}</div>}
           <div ref={audioHost} />
@@ -260,6 +291,13 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
               ? <div key={t.id} className="did">{t.text}</div>
               : <div key={t.id} className={`turn ${t.role}`}><small>{t.role === "agent" ? "Asha" : firstName}</small>{t.text}</div>)}
           </div>
+          {live && showTyping && (
+            <form className="typed" onSubmit={sendTyped}>
+              <input value={typed} onChange={(e) => setTyped(e.target.value)} aria-label="Type your side of the call"
+                placeholder="Type what you would say, then press Enter" autoComplete="off" />
+              <button className="btn" type="submit" disabled={!typed.trim()}>Send</button>
+            </form>
+          )}
         </div>
       </section>
 
