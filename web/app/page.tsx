@@ -1,5 +1,5 @@
-// Home page: the three mock sellers to call, the "try your own numbers" form,
-// and a short explanation of what happens on a call.
+// Home page: three detailed mock sellers to call, a link to the full portfolio, the
+// "try your own numbers" form, and a short explanation of what happens on a call.
 import Link from "next/link";
 import { q } from "@/lib/db";
 import { causeLabel, inr, pct } from "@/lib/format";
@@ -16,7 +16,8 @@ export default async function Home() {
     join monthly_metrics c on c.seller_id = s.id and c.period = 'curr'
     left join diagnoses d on d.seller_id = s.id
     order by s.is_custom, s.id`);
-  const demo = sellers.filter((s) => !s.is_custom);
+  const portfolio = sellers.filter((s) => !s.is_custom);
+  const demo = portfolio.filter((s) => ["S1", "S2", "S3"].includes(s.id));   // one seller per root cause
   const custom = sellers.filter((s) => s.is_custom).slice(-6);
 
   return (
@@ -51,6 +52,12 @@ export default async function Home() {
           </div>
         ))}
       </div>
+      {portfolio.length > demo.length && (
+        <p className="muted small" style={{ marginTop: 10 }}>
+          These three have different root causes. The portfolio has {portfolio.length} sellers:{" "}
+          <Link href="/dashboard">see the call queue ranked by the rupees Asha could win back</Link>.
+        </p>
+      )}
 
       <div className="two">
         <div className="card">

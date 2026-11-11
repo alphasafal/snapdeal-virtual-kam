@@ -32,11 +32,24 @@ export function newId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`;
 }
 
+// Run a "create table if not exists" once per server process. If it fails (for example the
+// database was briefly unreachable), forget the attempt so the next page load tries again
+// instead of failing until the server is restarted.
+function createOnce(sql: string): () => Promise<unknown> {
+  let ready: Promise<unknown> | null = null;
+  return () => {
+    ready ??= pool().query(sql).catch((error) => { ready = null; throw error; });
+    return ready;
+  };
+}
+
 // The review table is small and owned by the web app, so make sure it exists before using it.
-let reviewsReady: Promise<unknown> | null = null;
-export function ensureReviews(): Promise<unknown> {
-  reviewsReady ??= pool().query(`create table if not exists call_reviews (
+export const ensureReviews = createOnce(`create table if not exists call_reviews (
     call_id varchar primary key, verdict varchar not null, reviewer varchar, note text,
     reviewed_at timestamptz)`);
-  return reviewsReady;
-}
+
+// The planner table is written by the Python nightly scan. Creating it here as well means the
+// dashboard still loads on a database that was set up before the planner existed.
+export const ensurePlans = createOnce(`create table if not exists plans (
+    seller_id varchar primary key, computed_at timestamptz, gap_inr double precision,
+    recoverable_inr double precision, options json)`);

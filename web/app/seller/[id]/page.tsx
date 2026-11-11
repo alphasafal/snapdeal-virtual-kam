@@ -1,5 +1,6 @@
 // One seller's page. The server part (this file) loads the seller's numbers and earlier calls;
 // the live call itself is handled in the browser by components/CallScreen.tsx.
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { q } from "@/lib/db";
 import { causeLabel, inr, pct, shortDate } from "@/lib/format";
@@ -75,6 +76,7 @@ export default async function SellerPage({ params, searchParams }: {
       <div className="sellerhead">
         <h1>{seller.name}</h1>
         <span className="muted">{seller.owner_name}, {seller.category}, {seller.city}{seller.is_custom ? " (entered by you)" : ""}</span>
+        {!seller.is_custom && <Link className="small" href={`/seller/${seller.id}/plan`}>What-if planner</Link>}
       </div>
       <CallScreen sellerId={seller.id} ownerName={seller.owner_name}
         initialDirection={direction === "proactive" ? "proactive" : "inbound"}

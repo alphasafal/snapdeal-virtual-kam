@@ -124,4 +124,17 @@ form.own .h { font-size: 13px; color: var(--ink-3); }
 .flow div::before { content: counter(f); display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 600; margin-bottom: 8px; }
 .flow b { display: block; }
 
+td .btn { white-space: nowrap; }
+/* What-if planner */
+.opt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 12px; align-items: start; padding: 12px 0; border-bottom: 1px dashed var(--line); cursor: pointer; }
+.opt:last-of-type { border-bottom: 0; }
+.opt input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--green); }
+.opt .amt { color: var(--green); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.planbars { display: grid; gap: 12px; margin: 12px 0 16px; }
+.planbars > div { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.planbars span { color: var(--ink-2); font-size: 14px; }
+.planbars b { font-variant-numeric: tabular-nums; }
+.planbars .bar { height: 12px; margin: 0; }
+.planbars .bar i { transition: width .3s; }
+@media (max-width: 560px) { .planbars > div { grid-template-columns: 1fr auto; } .planbars .bar { grid-column: 1 / -1; order: 3; } .opt { grid-template-columns: auto minmax(0, 1fr); } .opt .amt { grid-column: 2; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
