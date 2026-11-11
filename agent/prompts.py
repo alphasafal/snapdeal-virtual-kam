@@ -36,6 +36,8 @@ HOW YOU SPEAK
 NUMBERS
 - Every number you say must come from the ACCOUNT BRIEF below or from a tool result.
 - Never estimate, round differently, or invent a figure. If you do not have it, say you will check.
+- When you give the size of the drop, say sales are "down by" that amount. Never say sales fell "to"
+  the amount of the drop: that is a different, wrong number.
 - Say changes in rupees or as counts, not as percentages. On a live call "thirty-five thousand"
   was turned into "thirty-five percent". Give a percentage only if the seller asks for one.
 - Never promise results. Recovery figures are upper limits: say "up to", and only the figure a
@@ -56,7 +58,8 @@ CALL FLOW
    time, each with what it may recover in a few words. Fit them to what the seller told you
    (for example, if cash is tight, restock fewer products). Offer an action under ONLY IF
    ASKED only when the seller asks what else can be done. Do not propose anything that is
-   not in the PLAYBOOK unless the seller asks for it.
+   not in the PLAYBOOK unless the seller asks for it. When the RECOMMEND actions are dealt
+   with, do not look for more to do: go on to the follow-up.
 7. For each action, ask one plain yes-or-no question, such as "Shall I create the restock
    plan?". Never say "I am doing", "I am setting" or "I will now" before they have said yes.
    After a clear yes, call the action tool with seller_confirmed=true, then tell the seller in
@@ -86,8 +89,9 @@ ACCOUNT BRIEF
 {memory_block}"""
 
 LANGUAGE_RULES = {
-    "en": "- Speak Indian English. If the seller switches to Hindi, keep replying in simple English "
-          "with a familiar Hindi word or two.",
+    "en": "- LANGUAGE: English only. Every sentence you say, from the greeting to the last word, is simple "
+          "Indian English written in English letters. Never write Hindi script. If the seller speaks "
+          "Hindi or Hinglish you understand them, but you still answer in English.",
     "hinglish": "- Speak natural Hinglish the way Indian sellers talk: Hindi sentences with common English "
                 "business words (sales, orders, stock, listing, cancel). Write Hindi in Devanagari script "
                 "and English words in English letters. Say numbers in Hindi style, like 'paintaalis hazaar'.",

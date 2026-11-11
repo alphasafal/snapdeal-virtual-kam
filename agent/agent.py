@@ -107,32 +107,50 @@ class KamAgent(Agent):
     ACTIONS_PER_YES = 2          # one "yes" may authorise at most this many actions
     NOTES_PER_TURN = 2           # at most this many notes may be recorded from one thing the seller said
 
-    def __init__(self, tools: KamTools, instructions: str, can_end_call: bool = True):
+    def __init__(self, tools: KamTools, instructions: str, can_end_call: bool = True,
+                 goodbye: Optional[str] = None):
+        """`goodbye` is the exact farewell to speak when the call ends (see goodbye_line).
+        Leave it out to let the model word its own goodbye, which the Gemini voice needs."""
         extra = []
         if can_end_call:
-            # LiveKit's ready-made tool that lets Asha say goodbye and hang up. (Tests switch
-            # it off because hanging up needs a real room.)
+            # LiveKit's ready-made tool that lets Asha hang up. (Tests switch it off because
+            # hanging up needs a real room.)
             from livekit.agents.beta.tools import EndCallTool
             extra.append(EndCallTool(
                 extra_description="Use only after wrap_up has been called, the summary has been spoken, and the "
-                                  "seller has said they need nothing else. Never use it mid-conversation.",
-                end_instructions="Say a short, warm goodbye to the seller by name, in the language of the call.",
+                                  "seller has said they need nothing else. Never use it mid-conversation. "
+                                  "Call it once and say nothing more: the goodbye is spoken for you.",
+                # With a fixed goodbye the model is not asked to write one. When it was, it
+                # sometimes called end_call again instead, and the call ended in silence.
+                end_instructions=None if goodbye else
+                "Say a short, warm goodbye to the seller by name, in the language of the call.",
                 ignore_on_enter=True,
-                on_tool_called=self._protect_goodbye))
+                on_tool_called=self._on_end_call))
         super().__init__(instructions=instructions, tools=extra)
+        self._goodbye = goodbye
+        self._goodbye_said = False
         self.kam = tools                                # the brain: look-ups and actions for this seller
         self.dialogue: list[tuple[str, str]] = []       # ("seller" | "agent", text) in spoken order
         self._yes_used: dict[int, int] = {}             # dialogue position of a "yes" -> actions it has authorised
         self._noted: dict[int, int] = {}                # dialogue position -> notes recorded from it
 
-    @staticmethod
-    async def _protect_goodbye(event) -> None:
-        """Let Asha finish her goodbye. On a live call a stray background sound was heard as
-        speech and cut the goodbye off after three words; the call then ended mid-sentence."""
+    async def _on_end_call(self, event) -> None:
+        """Runs when the model hangs up: speak the goodbye, and let nothing cut it off.
+
+        Two things went wrong here on live calls. A background sound was heard as speech and
+        cut the goodbye off after three words. And when the model was asked to word the
+        goodbye itself, it sometimes called end_call again instead and the line went dead."""
         try:
             event.ctx.disallow_interruptions()
         except Exception:               # already interrupted: nothing to protect
             pass
+        if self._goodbye and not self._goodbye_said:
+            self._goodbye_said = True
+            try:
+                # Queued behind the current turn. The session plays everything queued before it closes.
+                event.ctx.session.say(self._goodbye, allow_interruptions=False)
+            except Exception:
+                log.exception("could not queue the goodbye")
 
     # ---- The consent gate: enforced in code, not left to the model --------------------------
     #
@@ -544,6 +562,14 @@ def build_session(language: str, mode: str = "sarvam", gemini_model: Optional[st
     )
 
 
+def goodbye_line(owner_name: str, language: str) -> str:
+    """The farewell Asha speaks as the call ends, by first name, in the language of the call."""
+    first_name = (owner_name or "").split(" ")[0] or "ji"
+    if language == "hinglish":
+        return f"धन्यवाद {first_name} जी। अपना ध्यान रखिएगा, फिर बात करते हैं।"
+    return f"Thank you, {first_name}. Take care, and we will talk again soon."
+
+
 def estimate_cost(session: AgentSession, duration_s: int, mode: str = "sarvam") -> float:
     """A rupee estimate of what the call cost to run, for the dashboard.
 
@@ -841,7 +867,9 @@ async def entrypoint(ctx: JobContext) -> None:
 
     # 4. Build the audio pipeline, the agent, and the recorder that saves everything.
     session = build_session(language, mode, gemini_model, gemini_api, vad=ctx.proc.userdata.get("vad"))
-    kam_agent = KamAgent(tools, instructions)
+    # The Sarvam voice speaks a fixed goodbye. Gemini speaks for itself, so it words its own.
+    goodbye = None if mode == "gemini" else goodbye_line(tools.seller["owner_name"], language)
+    kam_agent = KamAgent(tools, instructions, goodbye=goodbye)
     recorder = CallRecorder(session, call_id, tools, mode=mode, agent=kam_agent,
                             on_done=lambda: ctx.shutdown(reason="call ended"))  # frees the worker at once
     recorder.references += [brief, memory or ""]

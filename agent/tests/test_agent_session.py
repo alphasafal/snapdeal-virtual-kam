@@ -186,3 +186,62 @@ async def test_worker_declines_calls_from_another_database(fresh_db):
     assert await decide("call_from_somewhere_else") == {"rejected": False}   # left for the right worker
     assert await decide(repo.create_call("S1")) == {"accepted": True}
     assert await decide("console-room") == {"accepted": True}
+
+
+# ---- Hanging up ---------------------------------------------------------------------------
+# On live calls the model, asked to word its own goodbye, sometimes called end_call again
+# instead and the line went dead. The goodbye is now a fixed line queued by code.
+
+class _FakeSession:
+    def __init__(self):
+        self.spoken = []
+
+    def say(self, text, allow_interruptions=True):
+        self.spoken.append((text, allow_interruptions))
+
+
+class _FakeRunContext:
+    def __init__(self):
+        self.session = _FakeSession()
+        self.protected = 0
+
+    def disallow_interruptions(self):
+        self.protected += 1
+
+
+class _FakeEvent:
+    def __init__(self):
+        self.ctx = _FakeRunContext()
+
+
+@pytest.mark.asyncio
+async def test_goodbye_is_spoken_once_and_cannot_be_interrupted(fresh_db):
+    import agent
+    from brain import repo
+    from brain.tools import KamTools
+    tools = KamTools("S1", repo.create_call("S1"))
+    kam = agent.KamAgent(tools, "instructions", can_end_call=False, goodbye=agent.goodbye_line("Rajesh Sharma", "en"))
+    first, second = _FakeEvent(), _FakeEvent()
+    await kam._on_end_call(first)
+    await kam._on_end_call(second)                 # the model calling end_call twice in a row
+    assert first.ctx.session.spoken == [("Thank you, Rajesh. Take care, and we will talk again soon.", False)]
+    assert second.ctx.session.spoken == []         # no second goodbye
+    assert first.ctx.protected == 1
+
+
+@pytest.mark.asyncio
+async def test_without_a_fixed_goodbye_the_model_words_its_own(fresh_db):
+    import agent
+    from brain import repo
+    from brain.tools import KamTools
+    tools = KamTools("S1", repo.create_call("S1"))
+    kam = agent.KamAgent(tools, "instructions", can_end_call=False)     # the Gemini voice path
+    event = _FakeEvent()
+    await kam._on_end_call(event)
+    assert event.ctx.session.spoken == [] and event.ctx.protected == 1
+
+
+def test_goodbye_line_follows_the_language_of_the_call():
+    import agent
+    assert agent.goodbye_line("Meena Patel", "hinglish").startswith("धन्यवाद Meena जी")
+    assert agent.goodbye_line("Meena Patel", "en").startswith("Thank you, Meena.")
