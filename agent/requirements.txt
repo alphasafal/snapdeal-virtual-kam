@@ -1,0 +1,7 @@
+livekit-agents[sarvam,google,silero]~=1.8
+sarvamai
+sqlalchemy>=2.0
+psycopg[binary]>=3.1
+python-dotenv
+pytest
+pytest-asyncio

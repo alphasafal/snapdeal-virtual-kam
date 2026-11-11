@@ -1,0 +1,18 @@
+.env
+.env.local
+*.db
+*.wav
+__pycache__/
+.pytest_cache/
+.venv/
+node_modules/
+.next/
+web-build.log
+upd-*.zip
+update-*.zip
+snapdeal-kam.zip
+.env.production
+*.log
+.DS_Store
+# personal interview notes, kept on this laptop only
+docs/EXPLAIN_IT.md
