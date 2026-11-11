@@ -10,7 +10,8 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const sellers = await q(`
     select s.id, s.name, s.owner_name, s.city, s.category, s.is_custom,
-           p.sales as sales_prev, c.sales as sales_curr, d.risk_level, d.primary_cause
+           p.sales as sales_prev, c.sales as sales_curr, d.risk_level, d.primary_cause,
+           d.gap_inr, d.result->'causes' as causes
     from sellers s
     join monthly_metrics p on p.seller_id = s.id and p.period = 'prev'
     join monthly_metrics c on c.seller_id = s.id and c.period = 'curr'
@@ -19,15 +20,41 @@ export default async function Home() {
   const portfolio = sellers.filter((s) => !s.is_custom);
   const demo = portfolio.filter((s) => ["S1", "S2", "S3"].includes(s.id));   // one seller per root cause
   const custom = sellers.filter((s) => s.is_custom).slice(-6);
+  // The hero shows the seller from the assignment brief, with the diagnosis already done.
+  const brief = portfolio.find((s) => s.id === "S1" && Number(s.gap_inr) > 0);
+  const briefCauses: { key: string; title: string; impact_inr: number; share_pct: number }[] =
+    (brief?.causes ?? []).filter((c: any) => c.impact_inr > 0);
 
   return (
     <>
       <section className="hero">
-        <h1>A voice account manager that finds why a seller's sales fell, and fixes it on the call.</h1>
-        <p>
-          Pick a seller and speak to Asha in English or Hinglish. She has already studied the account,
-          asks only what the data cannot tell her, and acts when the seller says yes.
-        </p>
+        <div>
+          <h1>A voice account manager that finds why a seller's sales fell, and fixes it on the call.</h1>
+          <p>
+            Pick a seller and speak to Asha in English or Hinglish. She has already studied the account,
+            asks only what the data cannot tell her, and acts when the seller says yes.
+          </p>
+        </div>
+        {brief && (
+          <div className="card herocard">
+            <div className="muted small">Before the phone rings, Asha already knows this about {brief.name}</div>
+            <div className="lost">{inr(brief.gap_inr)} <span>of sales lost this month</span></div>
+            <div className="splitbar">
+              {briefCauses.map((c, i) => (
+                <span key={c.key} className={`seg s${i}`} style={{ width: `${c.share_pct}%` }}>{c.share_pct >= 18 ? inr(c.impact_inr) : ""}</span>
+              ))}
+            </div>
+            <ul className="legend">
+              {briefCauses.map((c, i) => (
+                <li key={c.key}><i className={`s${i}`} />{c.title}<b>{c.share_pct}%</b></li>
+              ))}
+            </ul>
+            <div className="row" style={{ marginTop: 14 }}>
+              <Link className="btn primary" href={`/seller/${brief.id}`}>Call as this seller</Link>
+              <Link className="btn" href={`/seller/${brief.id}/plan`}>See the plan</Link>
+            </div>
+          </div>
+        )}
       </section>
 
       <div className="card sellers">

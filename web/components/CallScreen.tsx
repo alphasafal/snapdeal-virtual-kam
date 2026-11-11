@@ -256,7 +256,11 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
           <div className="now">{now}</div>
           {hint && <p className="hint">{hint}</p>}
           {live && waitedLong && <p className="hint">No agent has picked up. Check that the agent worker is running.</p>}
-          {live && <div className={`bars ${who ?? ""}`} aria-hidden><i /><i /><i /><i /><i /></div>}
+          {live && (
+            <div className={`bars ${who ?? ""}`} aria-hidden>
+              {Array.from({ length: 28 }, (_, i) => <i key={i} style={{ animationDelay: `${((i * 7) % 11) * 0.08}s` }} />)}
+            </div>
+          )}
 
           {(phase === "idle" || phase === "ringing") && (
             <div className="opts">
@@ -352,7 +356,7 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
         )}
 
         {callId && (
-          <div className="card">
+          <div className="card ledger">
             <h2>Agreed on this call</h2>
             {actions.length === 0 && <p className="muted">Nothing yet. An action is written here the moment the seller says yes.</p>}
             {actions.map((a) => (
@@ -378,6 +382,18 @@ export default function CallScreen({ sellerId, ownerName, initialDirection, hasH
           <div className="card">
             <h2>What Asha found before speaking</h2>
             <p>{diagnosis.headline}</p>
+            {(diagnosis.causes as Cause[]).some((c) => c.impact_inr > 0) && (
+              <figure className="split">
+                <figcaption className="muted small">Where the lost sales went</figcaption>
+                <div className="splitbar">
+                  {(diagnosis.causes as Cause[]).filter((c) => c.impact_inr > 0).map((c, i) => (
+                    <span key={c.key} className={`seg s${i}`} style={{ width: `${c.share_pct}%` }} title={`${c.title}: ${inr(c.impact_inr)}`}>
+                      {c.share_pct >= 18 ? inr(c.impact_inr) : ""}
+                    </span>
+                  ))}
+                </div>
+              </figure>
+            )}
             {(diagnosis.causes as Cause[]).map((c) => (
               <div className="cause" key={c.key}>
                 <div className="head"><b>{c.title}</b><span className="num">{c.impact_inr > 0 ? `${inr(c.impact_inr)}, ${c.share_pct}% of the drop` : "costs money, not part of the drop"}</span></div>

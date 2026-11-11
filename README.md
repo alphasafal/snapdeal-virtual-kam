@@ -24,6 +24,10 @@ Everything runs on mock data. Seller S1 is the exact table from the assignment b
 
 ## What it looks like
 
+The home page: the seller from the brief, already diagnosed, and two more with different causes.
+
+![Home page](docs/screenshots/home.png)
+
 The call screen after a call: the conversation, what was agreed, and what Asha found before she spoke.
 
 ![Call screen](docs/screenshots/call.png)
