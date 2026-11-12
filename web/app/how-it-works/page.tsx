@@ -81,6 +81,19 @@ export default function HowItWorks() {
       </div>
 
       <div className="card">
+        <h2>Assumptions</h2>
+        <p style={{ maxWidth: "70ch", marginBottom: 8 }}>The brief gives five numbers for two months. Everything else is an assumption, stated here.</p>
+        <ul className="clean" style={{ maxWidth: "80ch" }}>
+          <li>Sales are counted before cancellations: in the brief, sales equal orders times the average price in both months.</li>
+          <li>The brief's seller has 60 products. Their units and prices are invented, and add up exactly to the brief's sales and orders.</li>
+          <li>The loss from stockouts (₹45,450) is measured from those products. The remaining ₹19,550 is inferred to be lost visibility, and labelled that way.</li>
+          <li>Visits, rating, rival prices, late dispatch and cancellation reasons are mock values. So are the eleven other sellers.</li>
+          <li>The planner assumes stock costs 60% of the selling price. That figure can be changed on the planner page.</li>
+          <li>Every recovery figure is an upper limit: it assumes the action works fully for a whole month.</li>
+        </ul>
+      </div>
+
+      <div className="card">
         <h2>Cost and scale</h2>
         <p style={{ maxWidth: "70ch" }}>
           The default voice costs roughly ₹1.4 to ₹1.8 per call minute at published prices. At one lakh sellers and

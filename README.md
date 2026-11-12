@@ -18,9 +18,21 @@ Everything runs on mock data. Seller S1 is the exact table from the assignment b
 | **Voice** | Real-time streaming audio over WebRTC, not record-and-wait. The seller can interrupt Asha mid-sentence. English, Hindi and Hinglish, using speech models built for Indian accents. |
 | **Diagnosis** | Plain Python splits the ₹65,000 drop into causes: ₹45,450 from stockouts (measured), ₹19,550 from lost visibility (inferred, and labelled as such). The language model never calculates. |
 | **Ownership** | Asha saves actions during the call, books a follow-up, and opens the next call with what was agreed. A nightly scan ranks all twelve sellers by the rupees that could be won back, so she calls the right ones first. After a call, the summary can be sent to the seller on WhatsApp in one tap. |
-| **Planning** | A what-if planner for every seller: tick the actions they can take and see next month's sales. It quotes the same figures Asha says on the call, and a test checks that. |
-| **Trust** | An action is saved only if the seller's own words were a clear yes. After every call each rupee figure she spoke is checked against the data. A person can review and sign off any call. |
-| **Evidence** | 138 automated tests, including the real agent run against a scripted model. Twelve sellers across four situations (stockouts, rival pricing, late dispatch, and one that is growing), plus a form to enter any numbers. |
+| **Planning** | A what-if planner for every seller: tick the actions they can take and see next month's sales, the stock that has to be bought first, and the margin a price match gives up. Enter the cash the seller has and the plan shrinks to the products it covers. It quotes the same figures Asha says on the call, and tests check that. |
+| **Trust** | An action is saved only if the seller's own words were a clear yes, and the call record lists every attempt that was refused, with the words the seller actually said. After every call each rupee figure Asha spoke is checked against the data. A person can review and sign off any call. |
+| **Evidence** | 142 automated tests, including the real agent run against a scripted model. Twelve sellers across four situations (stockouts, rival pricing, late dispatch, and one that is growing), plus a form to enter any numbers. |
+
+## How it meets the brief
+
+| The brief asks for | Where it is |
+|---|---|
+| Greet the seller and understand the reason for the call | Asha greets the seller by name and asks how she can help. She does not give the diagnosis until the seller has said why they called. She can also place the call herself ("Have Asha call"). |
+| A natural two-way voice conversation | Streaming audio both ways over WebRTC (LiveKit), with speech models built for Indian accents (Sarvam). The seller can interrupt. English, Hindi and Hinglish. |
+| Relevant follow-up questions | One question at a time, at most three, and only what the data cannot answer: for example why the products ran out. The answer is saved and shapes the plan. |
+| Use the sample data to find issues: pricing, inventory, cancellations, visibility | `agent/brain/diagnosis.py` tests all four. For the brief's seller: price is flat, so pricing is ruled out; stockouts explain ₹45,450; the rest is put down to lost visibility from cancellations, and labelled as inferred. |
+| Recommend 2 to 3 practical actions | Code picks the three actions that fit this seller, biggest first (for the brief's seller: restock the top five, pause what cannot ship, keep a stock buffer). Each comes with what it may win back, and is saved only after a yes. |
+| Summarise issues, recommendations and next steps | A spoken summary at the end, the same summary on screen, a booked follow-up date, and a one-tap WhatsApp message with it. |
+| Voice-first, mock data only, a short note | The call screen is a voice call (typing is a fallback for when a microphone cannot be used). All data is mock data. The note is `docs/SUBMISSION_NOTE.pdf`. |
 
 ## What it looks like
 
@@ -45,7 +57,8 @@ One call's full record, with the automatic figure check and human review.
 ![Call record](docs/screenshots/call-record.png)
 
 These screens were captured with the scripted call simulator (`agent/simulate_call.py`), which
-needs no keys or microphone.
+needs no keys or microphone. Its script includes one deliberate early attempt to pause listings
+while the seller is still asking a question, so the call record shows a refused attempt.
 
 ## How it fits together
 
@@ -93,7 +106,7 @@ follows one call through the code, and lists the words used.
 | `agent/brain/` | Diagnosis engine, tools, what-if planner, consent check, figure check, database layer, mock data. Plain Python, no LLM. |
 | `agent/prompts.py` | The agent's instructions. |
 | `agent/speech_filter.py` | Keeps any leaked model reasoning out of what is spoken. |
-| `agent/tests/` | 138 tests, including the real agent run in a text-only session with a scripted LLM. |
+| `agent/tests/` | 142 tests, including the real agent run in a text-only session with a scripted LLM. |
 | `web/` | Next.js app: call screen, "try your own numbers", team dashboard with the call queue, what-if planner, call records and human review, how-it-works page. |
 | `docs/` | Architecture, code tour, submission note, recording script, deploy guide. |
 
@@ -115,7 +128,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # fill in the keys (skip if .env already exists)
 python hello_sarvam.py        # first Sarvam call: writes hello_sarvam.wav
-python -m pytest -q           # 138 tests, no keys needed
+python -m pytest -q           # 142 tests, no keys needed
 python -m brain.seed          # creates tables and the twelve mock sellers (wipes calls)
 python agent.py console       # optional: talk to Asha in the terminal
 python agent.py dev           # leave this running; it waits for calls
@@ -154,6 +167,7 @@ For a recording, the agent on your laptop is enough.
 | Safeguard | Where | What it does |
 |---|---|---|
 | Consent gate | `agent/brain/consent.py` | An action is saved only if the seller's own last words clearly agreed to that specific action. A question, or a yes to a different question, does not count. One yes covers at most two actions. |
+| Consent record | call record page | Every time the model said the seller had agreed, the gate's decision is kept: how many actions it let through, and each attempt it refused with the seller's actual words. |
 | Undo | `cancel_action` tool | If the seller says they did not want something, it is removed and its effects are reversed. |
 | Figure check | `agent/brain/audit.py` | After every call, each rupee amount the agent spoke (English, Hindi, Hinglish) is compared with the account data and tool results. Anything unmatched is flagged on the call record. |
 | Reasoning filter | `agent/speech_filter.py` | Leaked model reasoning never reaches the voice or the transcript. |
@@ -168,7 +182,8 @@ back in Gurmukhi script. Each failure is now a test case.
 
 Every finished call has its own page (Team dashboard, then "Open call") with the summary, every
 action, the full conversation including what the agent looked up, and what the seller said.
-A team member can mark the call as reviewed or flag it for follow-up, with a note.
+A team member can mark the call as reviewed or flag it for follow-up, with a note, and download
+the whole record as one file to attach to a ticket or pass to a human account manager.
 
 ## Reliability choices
 
@@ -185,6 +200,22 @@ A team member can mark the call as reviewed or flag it for follow-up, with a not
 - If the call does drop, the page says so and the next call picks up from what was agreed.
 - The call record is written the moment the conversation ends.
 - `MAX_CALLS_PER_HOUR` (web, default 60) caps spend on a public demo link.
+
+## Assumptions
+
+The brief gives five numbers for two months and says assumptions must be stated. These are mine.
+
+| Assumption | Why, and where it is used |
+|---|---|
+| Sales are counted before cancellations | In the brief, sales = orders × average selling price in both months (400 × ₹500, 270 × ₹500). So cancelled orders are a share of those orders: 14% of 270 is 38 orders, worth ₹18,900. |
+| The seller lists 60 products | The brief gives out-of-stock counts but no catalogue size. Used for a seller entered with totals only. |
+| Product-level data for the brief's seller | I invented 60 products whose units and prices add up exactly to the brief's sales and orders in both months (a test checks this). Thirteen of them ran out this month. This is what lets the diagnosis measure the stockout loss (₹45,450) instead of guessing it. |
+| The rest of the drop is lost visibility | ₹19,550 is what is left after the measured stockout loss. It is put down to lower search position from cancellations and rating, and labelled "inferred" everywhere, including to Asha. |
+| Visits, rating, rival prices, late-dispatch rate, cancellation reasons | Not in the brief. Mock values I added so pricing and service causes can be tested. |
+| Eleven more sellers (S2 to S12) | Mock sellers with different causes: rival pricing, late dispatch, stockouts, and one that is growing. |
+| Stock costs 60% of the selling price | Used only by the what-if planner, to say how much cash a restock needs. It is shown as an assumption on that page and can be changed there. |
+| A restock orders 20% above last month's units | So the product does not run out again straight away. |
+| Recovery figures are upper limits | Each assumes the action works fully for a whole month. Asha says "up to". |
 
 ## What is real and what is mocked
 

@@ -36,16 +36,16 @@ web app reads it once a second.
 | `speech_filter.py` | Removes a model's leaked "thinking" from a reply before it is spoken. |
 | `brain/diagnosis.py` | **The diagnosis engine.** Pure arithmetic with a worked example at the top. Read this one carefully. |
 | `brain/tools.py` | Everything Asha can look up or do: restock plan, pause listings, price match, follow-up, undo, the playbook, the summary. |
-| `brain/consent.py` | Decides whether the seller's words were a clear yes to a specific action. |
+| `brain/consent.py` | Decides whether the seller's words were a clear yes to a specific action, and builds the record of what was allowed and refused. |
 | `brain/audit.py` | After a call, finds every rupee amount Asha spoke and checks it against the data. |
 | `brain/repo.py` | All database reads and writes, in five labelled sections. |
 | `brain/db.py` | The database tables, listed and described at the top. |
 | `brain/seed.py` | The twelve mock sellers. Seller S1 is the table from the assignment brief; S1 to S3 are the detailed ones used in the demo. |
-| `brain/planner.py` | The what-if planner: the actions open to a seller and the rupees each could win back. |
+| `brain/planner.py` | The what-if planner: the actions open to a seller, the rupees each could win back, and what each costs (stock to buy, margin given up). |
 | `brain/jobs.py` | The nightly scan: diagnoses every seller and stores the planner's options, which is what ranks the call queue. |
-| `simulate_call.py` | Plays a scripted call into the database with no audio, to check the screens. |
+| `simulate_call.py` | Plays a scripted call into the database with no audio, to check the screens. Its actions pass the same consent check as a live call. |
 | `hello_sarvam.py`, `hello_gemini.py` | One-file checks that each API key works. |
-| `tests/` | 138 tests. `test_agent_session.py` runs the real agent with a scripted model. |
+| `tests/` | 142 tests. `test_agent_session.py` runs the real agent with a scripted model. |
 
 ### `web/`
 
@@ -61,6 +61,7 @@ web app reads it once a second.
 | `app/api/calls/route.ts` | Creates a call and a LiveKit token. |
 | `app/api/calls/[id]/route.ts` | The call's live state, polled by the call screen. |
 | `app/api/calls/[id]/review/route.ts` | Saves a human review. |
+| `app/api/calls/[id]/report/route.ts` | The whole call record as one downloadable text file. |
 | `app/api/sellers/route.ts` | Saves a seller typed into the "own numbers" form. |
 | `app/api/simulate-week/route.ts` | Demo helper: pretend a week passed. |
 | `lib/db.ts`, `lib/format.ts` | Database connection and display helpers. |
@@ -80,7 +81,8 @@ web app reads it once a second.
 6. The seller speaks. The model replies, and may call a tool: one of the `@function_tool`
    methods on `KamAgent`.
 7. If the tool is an action, `KamAgent._act()` asks `_consent()`, which uses
-   `consent.seller_agreed()` on the seller's own last words. No clear yes, no save.
+   `consent.seller_agreed()` on the seller's own last words. No clear yes, no save. Either way
+   the decision is kept, and the call record lists what was allowed and what was refused.
 8. `CallRecorder` hears every finished utterance and every tool call and writes them to
    `call_turns`. The call screen shows them within a second.
 9. The call ends. `CallRecorder._finish()` rebuilds the summary, runs `audit.audit_call()`

@@ -37,7 +37,8 @@ Step 6 is worth keeping: it shows she takes no for an answer and saves nothing.
 - **Interrupt her** mid-sentence in step 3 with "एक minute, ये restock plan क्या है?". She should
   stop and answer. This shows the conversation is two-way.
 - **Ask instead of agreeing** in step 4: "इससे क्या फायदा होगा?". Nothing is saved until you
-  actually say yes. This shows the consent check.
+  actually say yes. This shows the consent check. If Asha tries to save it anyway, the call
+  page lists the refused attempt under **Consent check**, with your words.
 
 ## For the live walkthrough (not the two-minute video)
 

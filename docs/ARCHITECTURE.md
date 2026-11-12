@@ -99,7 +99,7 @@ sequenceDiagram
     V-->>S: audio
     A->>D: transcript line (the screen shows it within a second)
   end
-  A->>D: summary, figure check, cost, reply delay
+  A->>D: summary, figure check, consent record, cost, reply delay
   Note over W,D: A team member opens the call and signs it off
 ```
 
@@ -154,7 +154,7 @@ These are estimates from the design and published prices. Nothing here has been 
 | The seller's network drops | The call is recorded as dropped; the next call opens with what was agreed |
 | A worker dies mid-call | The dashboard closes the call record after 30 minutes and marks it |
 | The database is unreachable | `GET /api/health` answers 503, so a load balancer or monitor can react; pages recover on the next request |
-| The model claims consent it did not get | The tool refuses and tells the model to ask; nothing is saved |
+| The model claims consent it did not get | The tool refuses and tells the model to ask; nothing is saved, and the refusal is listed on the call record with the seller's actual words |
 | The model says a wrong rupee figure | The figure check flags the call for the human reviewer |
 | Someone opens rooms on the LiveKit project | The worker only joins rooms that match a call row in its database |
 | A public demo link is abused | The web app caps calls per hour (`MAX_CALLS_PER_HOUR`) |
@@ -165,3 +165,6 @@ These are estimates from the design and published prices. Nothing here has been 
 - Not load-tested, and the team dashboard has no login.
 - On a laptop the first ring can take several seconds, and replies take two to three seconds.
 - Recovery figures are upper limits; Asha says "up to".
+- The consent check is strict on purpose. A reply with a "no" word anywhere in it, such as "I did not
+  know that, yes do it", is refused and Asha asks again. It costs a repeat; it never saves by mistake.
+- The planner's stock cost uses an assumed purchase price (60% of the selling price), editable on the page.
