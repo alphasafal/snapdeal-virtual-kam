@@ -9,7 +9,7 @@ Everything runs on mock data. Seller S1 is the exact table from the assignment b
 
 [![tests](https://github.com/alphasafal/snapdeal-virtual-kam/actions/workflows/tests.yml/badge.svg)](https://github.com/alphasafal/snapdeal-virtual-kam/actions/workflows/tests.yml)
 
-<!-- DEMO VIDEO: replace this comment with a line such as   **Demo video (2 min):** https://...   -->
+**Demo video (2 min):** https://drive.google.com/file/d/1HLjKaaeETStPjEr-YW36civwc_4jSI5Z/view?usp=sharing
 
 ## At a glance
 
