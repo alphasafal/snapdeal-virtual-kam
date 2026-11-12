@@ -81,7 +81,7 @@ export default async function Dashboard() {
                   <td><span className={`pill ${s.risk_level}`}>{s.risk_level}</span></td>
                   <td>{causeLabel(s.primary_cause)}</td>
                   <td className="num">{inr(s.gap_inr)}</td>
-                  <td className="num" style={{ color: "var(--green)", fontWeight: 600 }}>{Number(s.recoverable) ? `up to ${inr(s.recoverable)}` : ""}</td>
+                  <td className="num" style={{ color: "var(--green)", fontWeight: 600, whiteSpace: "nowrap" }}>{Number(s.recoverable) ? `up to ${inr(s.recoverable)}` : ""}</td>
                   <td>{s.last_call ? shortDate(s.last_call) : <span className="muted">Never</span>}</td>
                   <td>{s.next_followup ? day(s.next_followup) : <span className="muted">None</span>}</td>
                   <td className="row" style={{ flexWrap: "nowrap" }}>

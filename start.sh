@@ -63,6 +63,7 @@ echo "== 4/6 Sarvam check, tests, mock sellers =="
 [ -f hello_sarvam.wav ] || python hello_sarvam.py || echo "Sarvam call failed: check SARVAM_API_KEY in agent/.env"
 python -m pytest -q
 case " $* " in *" --reset "*) python -m brain.seed ;; *) python -m brain.seed --if-empty ;; esac
+python -m brain.jobs > /dev/null 2>&1 || true   # the nightly scan: refresh every seller's diagnosis and plan
 
 echo "== 5/6 Web app packages =="
 cd "$ROOT/web"

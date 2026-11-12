@@ -64,6 +64,39 @@ def test_planner_agrees_with_what_asha_says_on_the_call(fresh_db):
     assert f"{int(price['recover_inr'])}" in spoken.replace(",", "")
 
 
+def test_restock_cost_uses_the_quantities_asha_orders(fresh_db):
+    """The planner's stock to buy is the same units, product by product, as the restock plan
+    Asha saves on a call, and the sales it wins back add up to the option's own figure."""
+    restock = next(o for o in plan("S1")["options"] if o["key"] == "restock_top")
+    call_id = repo.create_call("S1")
+    KamTools("S1", call_id).create_restock_plan(5, seller_confirmed=True)
+    saved = repo.get_actions(call_id=call_id)[0]["detail"]["products"]
+    assert [(i["name"], i["units"]) for i in restock["items"]] == [(p["name"], p["quantity"]) for p in saved]
+    assert sum(i["recover_inr"] for i in restock["items"]) == restock["recover_inr"]
+    prices = {p.name: p.price for p in repo.get_products("S1")}
+    assert all(i["stock_value_inr"] == i["units"] * prices[i["name"]] for i in restock["items"])
+    assert restock["cost_share"] == 0.6                               # an assumption, shown as one on the page
+
+
+def test_price_match_margin_uses_the_prices_asha_sets(fresh_db):
+    """The margin the planner says a price match gives up is the cut Asha would save,
+    on last month's volume."""
+    price = next(o for o in plan("S2")["options"] if o["key"] == "price_top")
+    call_id = repo.create_call("S2")
+    KamTools("S2", call_id).match_rival_prices(5, 15, seller_confirmed=True)
+    saved = repo.get_actions(call_id=call_id)[0]["detail"]["products"]
+    sold_last_month = {p.id: p.units_prev for p in repo.get_products("S2")}
+    assert price["margin_inr"] == sum((p["old_price"] - p["new_price"]) * sold_last_month[p["id"]] for p in saved)
+    assert 0 < price["margin_inr"] < price["recover_inr"]            # cheaper than the sales it wins back
+
+
+def test_only_restocks_and_price_matches_carry_a_cost(fresh_db):
+    for seller in seed.SELLERS:
+        for option in plan(seller["id"])["options"]:
+            assert ("items" in option) == option["key"].startswith("restock_")
+            assert ("margin_inr" in option) == option["key"].startswith("price_")
+
+
 def test_planner_never_promises_more_than_was_lost(fresh_db):
     for seller in seed.SELLERS:
         result = plan(seller["id"])
@@ -80,3 +113,5 @@ def test_nightly_scan_stores_a_plan_for_every_seller(fresh_db):
     assert set(stored) == {s["id"] for s in seed.SELLERS}
     assert stored["S1"]["recoverable_inr"] > 40000
     assert stored["S10"]["options"] == []
+    restock = next(o for o in stored["S1"]["options"] if o["key"] == "restock_top")
+    assert len(restock["items"]) == 5 and restock["items"][0]["units"] > 0   # the page costs the plan from these
