@@ -30,6 +30,8 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
   const kept = actions.filter((a) => a.status !== "cancelled");
   const total = kept.reduce((sum, a) => sum + (a.expected_recovery_inr ?? 0), 0);
   const audit = summary.audit as { figures_checked: number; flags: { said: string; value: number; in: string }[] } | undefined;
+  // What the consent gate did: how many actions it let through, and each attempt it refused.
+  const consent = summary.consent as { allowed: number; refused: { action: string; why: string; seller_said: string }[] } | undefined;
   const facts: [string, string][] = [
     ["When", shortDate(call.started_at)],
     ["Type", call.direction === "proactive" ? "Asha called the seller" : "Seller called Asha"],
@@ -128,6 +130,27 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
           </div>
 
           <div className="card">
+            <h2>Consent check</h2>
+            {!consent && <p className="muted">Not recorded for this call.</p>}
+            {consent && (
+              <p>
+                {consent.allowed === 0 && consent.refused.length === 0
+                  ? "Asha did not try to save any action that needs the seller's yes."
+                  : `${consent.allowed} ${consent.allowed === 1 ? "action was" : "actions were"} saved, each after the seller's own words were a clear yes.`}
+                {consent.refused.length > 0 && ` ${consent.refused.length} ${consent.refused.length === 1 ? "attempt was" : "attempts were"} refused and nothing was saved:`}
+              </p>
+            )}
+            {consent && consent.refused.length > 0 && (
+              <ul className="clean">
+                {consent.refused.map((r, i) => (
+                  <li key={i}><b>{r.action}</b>: {r.why}. {r.seller_said && <span className="muted">The seller had said: "{r.seller_said}"</span>}</li>
+                ))}
+              </ul>
+            )}
+            <p className="muted small" style={{ marginTop: 8 }}>The language model only claims the seller agreed. Code reads the seller's transcribed words before anything is saved.</p>
+          </div>
+
+          <div className="card">
             <h2>Call details</h2>
             <table><tbody>{facts.map(([k, v]) => <tr key={k}><td className="muted">{k}</td><td>{v}</td></tr>)}</tbody></table>
           </div>
@@ -138,6 +161,7 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
               <ul className="clean">{Object.entries(notes).map(([k, v]) => <li key={k}><b>{k.replace(/_/g, " ")}:</b> {v}</li>)}</ul>
             </div>
           )}
+          <p style={{ marginBottom: 10 }}><a className="btn" href={`/api/calls/${call.id}/report`} download>Download the call report</a></p>
           <p className="small"><Link href={`/seller/${call.seller_id}`}>Open this seller's call screen</Link></p>
         </section>
       </div>

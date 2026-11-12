@@ -45,7 +45,7 @@ from livekit.agents import Agent, AgentServer, AgentSession, JobContext, functio
 
 from brain import db, repo
 from brain.audit import audit_call
-from brain.consent import seller_agreed
+from brain.consent import gate_report, seller_agreed
 from brain.tools import KamTools
 from prompts import build_instructions
 from speech_filter import ReasoningFilter
@@ -133,6 +133,7 @@ class KamAgent(Agent):
         self.dialogue: list[tuple[str, str]] = []       # ("seller" | "agent", text) in spoken order
         self._yes_used: dict[int, int] = {}             # dialogue position of a "yes" -> actions it has authorised
         self._noted: dict[int, int] = {}                # dialogue position -> notes recorded from it
+        self.gate_log: list[tuple[str, str, str]] = []  # (action, "agreed" or why refused, the seller's words checked)
 
     async def _on_end_call(self, event) -> None:
         """Runs when the model hangs up: speak the goodbye, and let nothing cut it off.
@@ -214,6 +215,7 @@ class KamAgent(Agent):
         if not seller_confirmed:
             return await db_call(fn, *args, False)
         agreed, why = await self._consent(action)
+        self.gate_log.append((action, "agreed" if agreed else why, self._last_exchange()[1]))
         if agreed:
             return await db_call(fn, *args, True)
         log.warning("blocked %s: model claimed consent, seller did not give it (%s)", action, why)
@@ -221,6 +223,10 @@ class KamAgent(Agent):
         if result.get("status") == "needs_confirmation":
             result["instruction"] = self.BLOCKED.get(why, self.BLOCKED_DEFAULT)
         return result
+
+    def consent_report(self) -> dict[str, Any]:
+        """What the consent gate allowed and refused on this call (see brain/consent.py)."""
+        return gate_report(self.gate_log)
 
     # ---- Cleaning the model's words before they are spoken --------------------------------------
 
@@ -752,7 +758,7 @@ class CallRecorder:
         await asyncio.shield(self._finish_task)
 
     async def _finish(self) -> None:
-        """Save the last transcript lines, then the summary, figure check, cost and timing."""
+        """Save the last transcript lines, then the summary, figure check, consent record, cost and timing."""
         self._turns.put_nowait(None)          # tell the writer to stop after what is queued
         await self._writer
         ended = datetime.now(timezone.utc)
@@ -770,6 +776,13 @@ class CallRecorder:
             summary["audit"] = audit_call(self.agent_said, self.references)
         except Exception:
             log.exception("figure check failed")
+
+        # What the consent gate allowed and refused (KamAgent.consent_report).
+        try:
+            if self.agent is not None:
+                summary["consent"] = self.agent.consent_report()
+        except Exception:
+            log.exception("consent report failed")
 
         delays = self.reply_delays
         await db_call(repo.update_call, self.call_id, status="ended", ended_at=ended, duration_s=duration,

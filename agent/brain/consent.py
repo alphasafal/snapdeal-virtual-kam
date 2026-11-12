@@ -144,3 +144,29 @@ def seller_agreed(seller_text: str, agent_text_before: str, action: str) -> tupl
     if action in ACTION_WORDS and not mentions(agent_text_before, action):
         return False, "yes_was_about_something_else"
     return True, ""
+
+
+# ---- the record of what the gate decided, for the call page ------------------------------
+# Why an attempt was refused, in words a reviewer can read.
+REFUSED_BECAUSE = {
+    "declined": "the seller's reply contained a no",
+    "no_clear_yes": "the seller's reply was not a clear yes",
+    "yes_was_about_something_else": "the seller's yes was to a different question",
+    "yes_already_used": "that yes had already been used for other actions",
+    "nothing_heard": "the seller had not said anything yet",
+}
+
+
+def gate_report(log: list[tuple[str, str, str]]) -> dict:
+    """What the consent gate decided on a call, for the call record.
+
+    log  one entry per time the model said the seller had agreed:
+         (action, "agreed" or the reason it was refused, the seller's words that were checked)
+
+    These are facts, not a reading of the transcript. Returns
+    {"allowed": how many actions were let through,
+     "refused": [{"action", "why", "seller_said"}, ...]}."""
+    refused = [{"action": action.replace("_", " "), "why": REFUSED_BECAUSE.get(why, why.replace("_", " ")),
+                "seller_said": heard[:160]}
+               for action, why, heard in log if why != "agreed"]
+    return {"allowed": len(log) - len(refused), "refused": refused}

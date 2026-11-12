@@ -125,6 +125,11 @@ async def test_model_cannot_act_without_the_sellers_yes(fresh_db):
     await asyncio.wait_for(recorder.finish(), 5)
     shown = [t["text"] for t in repo.get_turns(call_id) if t["role"] == "tool"]
     assert shown.count("Saved the restock plan") == 1 and "Prepared a restock proposal" in shown
+    # The call record says what the gate did: one action let through, one attempt refused, and why.
+    consent = repo.get_call(call_id)["summary"]["consent"]
+    assert consent["allowed"] == 1
+    assert consent["refused"] == [{"action": "restock plan", "why": "the seller's reply contained a no",
+                                   "seller_said": "How much did you say? I did not understand the figures."}]
 
 
 @pytest.mark.asyncio
@@ -245,3 +250,20 @@ def test_goodbye_line_follows_the_language_of_the_call():
     import agent
     assert agent.goodbye_line("Meena Patel", "hinglish").startswith("धन्यवाद Meena जी")
     assert agent.goodbye_line("Meena Patel", "en").startswith("Thank you, Meena.")
+
+
+def test_consent_report_counts_what_the_gate_allowed_and_refused(fresh_db):
+    import agent
+    from brain import repo
+    from brain.tools import KamTools
+
+    kam = agent.KamAgent(KamTools("S1", repo.create_call("S1")), "instructions", can_end_call=False)
+    assert kam.consent_report() == {"allowed": 0, "refused": []}
+    kam.gate_log += [("restock_plan", "agreed", "जी बना दीजिए।"),
+                     ("stock_buffer", "yes_was_about_something_else", "हाँ"),
+                     ("pause_listings", "some_new_reason", "hmm")]
+    report = kam.consent_report()
+    assert report["allowed"] == 1
+    assert report["refused"] == [
+        {"action": "stock buffer", "why": "the seller's yes was to a different question", "seller_said": "हाँ"},
+        {"action": "pause listings", "why": "some new reason", "seller_said": "hmm"}]
